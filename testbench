@@ -1,0 +1,84 @@
+`timescale 1ns / 1ps
+
+module vending_machine_tb;
+
+    reg clk;
+    reg reset;
+    reg cancel;
+    reg [1:0] sel;     // 00 = A, 01 = B, 10 = C
+    reg [1:0] coin;    // 01 = ₹5, 10 = ₹10
+    wire pa, pb, pc;
+    wire [4:0] change;
+
+    vending_machine uut (
+        .clk(clk),
+        .reset(reset),
+        .cancel(cancel),
+        .sel(sel),
+        .coin(coin),
+        .pa(pa),
+        .pb(pb),
+        .pc(pc),
+        .change(change)
+    );
+
+    // Clock generation
+    always #5 clk = ~clk; // 10 ns clock period
+
+    initial begin
+        // Initial signals
+        clk = 0;
+        reset = 0;
+        cancel = 0;
+        sel = 2'b00;
+        coin = 2'b00;
+
+        // Apply reset
+        $display("=== Resetting Machine ===");
+        reset = 1; #10;
+        reset = 0; #10;
+
+        // Test 1: Buy product A with ₹5 (exact amount)
+        $display("=== Test 1: Buy A with ₹5 ===");
+        coin = 2'b01; #10; 
+        sel = 2'b00; #10;    
+        sel = 2'b00; coin = 0; #20;
+
+        // Test 2: Buy product B with ₹10 (exact amount)
+        $display("=== Test 2: Buy B with ₹10 ===");
+        coin = 2'b10; #10;   
+        sel = 2'b01; #10;    
+        sel = 2'b00; coin = 0; #20;
+
+        // Test 3: Buy product B with ₹15 (expect ₹5 change)
+        $display("=== Test 3: Buy B with ₹15 ===");
+        coin = 2'b10; #10;   
+        coin = 2'b01; #10;   
+        sel = 2'b01; #10;    
+        sel = 2'b00; coin = 0; #20;
+
+        // Test 4: Buy product C with ₹20
+        $display("=== Test 4: Buy C with ₹20 ===");
+        coin = 2'b10; #10;   
+        coin = 2'b10; #10;   
+        sel = 2'b10; #10;   
+        sel = 2'b00; coin = 0; 
+
+        // Test 5: Insert ₹10 and cancel
+        $display("=== Test 5: Cancel after ₹10 ===");
+        coin = 2'b10; #10;
+        cancel = 1; #10;
+        cancel = 0; #20;
+
+        // Test 6: Insert ₹15 and cancel
+        $display("=== Test 6: Cancel after ₹15 ===");
+        coin = 2'b10; #10;
+        coin = 2'b01; #10;
+        cancel = 1; #10;
+        cancel = 0; #20;
+
+        $display("=== Simulation Complete ===");
+        $stop;
+    end
+
+endmodule
